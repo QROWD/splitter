@@ -42,8 +42,7 @@ if __name__ == "__main__":
   base = pd.concat(base)
   base = base.drop(['day'], axis=1)
 
-  pd.DataFrame.to_csv(base, "/home/lpfgarcia/Desktop/" + str(args.label) + 
-    "_acc_bruto.csv")
+  pd.DataFrame.to_csv(base, str(args.label) + "_acc_bruto.csv")
 
   data = pq.ParquetDataset(str(args.path) + "locationeventpertime.parquet/")
   data = data.read().to_pandas()
@@ -57,5 +56,4 @@ if __name__ == "__main__":
   base = pd.concat(base)
   base = base.drop(['day'], axis=1)
 
-  pd.DataFrame.to_csv(base, "/home/lpfgarcia/Desktop/" + str(args.label) + 
-    "_gps_bruto.csv")
+  pd.DataFrame.to_csv(base, str(args.label) + "_gps_bruto.csv")
