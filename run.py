@@ -19,15 +19,12 @@ if __name__ == "__main__":
   path = os.path.dirname(os.path.realpath(os.path.basename(__file__)))
   args = parser.parse_args()
 
-  print(args)
-
   data = pq.ParquetDataset(str(args.path) + "/questionnaireanswers.parquet/")
   data = data.read().to_pandas()
   data = data.fillna(0)
 
   aux = data.loc[data["answerstringb"] == str(args.label), "questiontimestamp"]
 
-  print(aux)
   aux = aux.index.values
 
   A = data.iloc[aux-1, 1]
