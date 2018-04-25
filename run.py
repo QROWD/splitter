@@ -5,6 +5,14 @@ import pyarrow.parquet as pq
 import numpy as np
 from pyspark.sql import SparkSession
 
+def filtering(data, A, B):
+  base = []
+  for a, b in zip(A, B):
+    mask = (data['timestamp'] > a) & (data['timestamp'] <= b)
+    base.append(data.loc[mask])
+  base = pd.concat(base)
+  return base
+
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(
@@ -17,20 +25,18 @@ if __name__ == "__main__":
   parser.add_argument('--label', help='label of the transportation mode:' + 
     '{Car, Auto, Bike}')
 
-  path = os.path.dirname(os.path.realpath(os.path.basename(__file__)))
   args = parser.parse_args()
 
   spark = SparkSession.builder \
     .master('local') \
-    .appName('muthootSample1') \
-    .config('spark.executor.memory', '5gb') \
-    .config("spark.cores.max", "6") \
+    .appName('split') \
+    .config('spark.executor.memory', '4gb') \
+    .config("spark.cores.max", "4") \
     .getOrCreate()
 
   data = pq.ParquetDataset(str(args.path) + "questionnaireanswers.parquet/")
   data = data.read().to_pandas()
   data = data.fillna(0)
-
 
   aux = data.loc[data["answerstringb"] == str(args.label), "questiontimestamp"]
 
@@ -41,28 +47,15 @@ if __name__ == "__main__":
 
   data = pq.ParquetDataset(str(args.path) + "accelerometerevent.parquet/")
   data = data.read().to_pandas()
-  data = data.fillna(0)
+  data = data.drop(['day'], axis=1)
 
-  base = []
-  for a, b in zip(A, B):
-    mask = (data['timestamp'] > a) & (data['timestamp'] <= b)
-    base.append(data.loc[mask])
+  base = filtering(data, A, B)
+  pd.DataFrame.to_csv(base, str(args.label) + "_acc.csv")
 
-  base = pd.concat(base)
-  base = base.drop(['day'], axis=1)
+  data = spark.read.load(str(args.path) + "locationeventpertime.parquet/")
+  data = data.toPandas()
 
-  pd.DataFrame.to_csv(base, str(args.label) + "_acc_bruto.csv")
+  data = data[["timestamp", "point"]]
 
-
-  df = spark.read.load(str(args.path) + "locationeventpertime.parquet/")
-  df = df.toPandas()
-
-  base = []
-  for a, b in zip(A, B):
-    mask = (data['timestamp'] > a) & (data['timestamp'] <= b)
-    base.append(data.loc[mask])
-
-  base = pd.concat(base)
-  base = base.drop(['day'], axis=1)
-
-  pd.DataFrame.to_csv(base, str(args.label) + "_gps_bruto.csv")
+  base = filtering(data, A, B)
+  pd.DataFrame.to_csv(base, str(args.label) + "_gps.csv")
