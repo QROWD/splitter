@@ -1,8 +1,9 @@
 import sys, os
 import argparse
-import pyarrow.parquet as pq
 import pandas as pd
+import pyarrow.parquet as pq
 import numpy as np
+from pyspark.sql import SparkSession
 
 if __name__ == "__main__":
 
@@ -19,9 +20,17 @@ if __name__ == "__main__":
   path = os.path.dirname(os.path.realpath(os.path.basename(__file__)))
   args = parser.parse_args()
 
-  data = pq.ParquetDataset(str(args.path) + "/questionnaireanswers.parquet/")
+  spark = SparkSession.builder \
+    .master('local') \
+    .appName('muthootSample1') \
+    .config('spark.executor.memory', '5gb') \
+    .config("spark.cores.max", "6") \
+    .getOrCreate()
+
+  data = pq.ParquetDataset(str(args.path) + "questionnaireanswers.parquet/")
   data = data.read().to_pandas()
   data = data.fillna(0)
+
 
   aux = data.loc[data["answerstringb"] == str(args.label), "questiontimestamp"]
 
@@ -44,9 +53,9 @@ if __name__ == "__main__":
 
   pd.DataFrame.to_csv(base, str(args.label) + "_acc_bruto.csv")
 
-  data = pq.ParquetDataset(str(args.path) + "locationeventpertime.parquet/")
-  data = data.read().to_pandas()
-  data = data.fillna(0)
+
+  df = spark.read.load(str(args.path) + "locationeventpertime.parquet/")
+  df = df.toPandas()
 
   base = []
   for a, b in zip(A, B):
