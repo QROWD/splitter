@@ -25,8 +25,8 @@ if __name__ == "__main__":
   parser.add_argument('--label', help='label of the transportation mode:' +
     '{Car, Auto, Bike}')
 
-  parser.add_argument('--window', help='the window size in minutes:' +
-    '{5, 10, 20}')
+  parser.add_argument('--window', type=int, default=15,
+  help='the window size in minutes: {5, 10, 20}')
 
   args = parser.parse_args()
 
