@@ -1,5 +1,5 @@
-import sys, os
 import argparse
+import datetime
 import pandas as pd
 import pyarrow.parquet as pq
 import numpy as np
@@ -8,7 +8,7 @@ from pyspark.sql import SparkSession
 def filtering(data, A, B):
   base = []
   for a, b in zip(A, B):
-    mask = (data['timestamp'] > a) & (data['timestamp'] <= b)
+    mask = (data['timestamp'] > a) & (data['timestamp'] < b)
     base.append(data.loc[mask])
   base = pd.concat(base)
   return base
@@ -22,8 +22,11 @@ if __name__ == "__main__":
 
   parser.add_argument('--path', help='directory of the parquet file')
 
-  parser.add_argument('--label', help='label of the transportation mode:' + 
+  parser.add_argument('--label', help='label of the transportation mode:' +
     '{Car, Auto, Bike}')
+
+  parser.add_argument('--window', help='the window size in minutes:' +
+    '{5, 10, 20}')
 
   args = parser.parse_args()
 
@@ -40,10 +43,8 @@ if __name__ == "__main__":
 
   aux = data.loc[data["answerstringb"] == str(args.label), "questiontimestamp"]
 
-  aux = aux.index.values
-
-  A = data.iloc[aux-1, 1]
-  B = data.iloc[aux, 1]
+  A = aux - datetime.timedelta(minutes=args.window)
+  B = aux + datetime.timedelta(minutes=args.window)
 
   data = pq.ParquetDataset(str(args.path) + "accelerometerevent.parquet/")
   data = data.read().to_pandas()
